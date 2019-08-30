@@ -407,9 +407,10 @@ contains
          avgflag='A', long_name='Ground evaporation (ice landunits only)', &
          ptr_patch=this%qflx_evap_soi_patch, c2l_scale_type='urbanf', l2g_scale_type='ice')
 
+    this%qflx_evap_soi_patch(begp:endp) = spval
     call hist_addfld2d (fname='QROOTSINK',  units='mm/s', type2d='levsoi', &
          avgflag='A', long_name='water flux from soil to root in each soil-layer', &
-         ptr_col=this%qflx_rootsoi_col, set_spec=spval, l2g_scale_type='veg', default='inactive')
+         ptr_col=this%qflx_rootsoi_col, set_lake=0._r8, c2l_scale_type='urbanf')
 
     this%qflx_evap_can_patch(begp:endp) = spval
     call hist_addfld1d (fname='QVEGE', units='mm/s',  &
