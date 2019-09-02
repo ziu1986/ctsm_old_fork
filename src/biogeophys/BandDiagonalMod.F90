@@ -210,7 +210,7 @@ contains
              write(iulog,'(i2,5f18.7)') j,temp(3:7,j)
           enddo
           write(iulog,*) ''
-          call endrun( 'BandDiagonal ERROR: dgbsv returned error code' )
+          ! call endrun( 'BandDiagonal ERROR: dgbsv returned error code' ) marius comment
        endif
        deallocate(temp)
 
