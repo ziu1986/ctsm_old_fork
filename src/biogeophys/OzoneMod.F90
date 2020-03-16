@@ -62,6 +62,7 @@ module OzoneMod
 
      ! Calculate ozone stress for a single point, for just sunlit or shaded leaves
      procedure, private, nopass :: CalcOzoneStressOnePoint
+     procedure, public, nopass :: CalcOzoneUptakeOnePoint
   end type ozone_type
 
   interface ozone_type
@@ -383,16 +384,13 @@ contains
 
   end subroutine CalcOzoneStress
 
-  !-----------------------------------------------------------------------
-  subroutine CalcOzoneStressOnePoint( &
+!-----------------------------------------------------------------------
+  subroutine CalcOzoneUptakeOnePoint( &
        forc_ozone, forc_pbot, forc_th, &
        rs, rb, ram, &
        tlai, tlai_old, pft_type, &
-       o3uptake, o3coefv, o3coefg)
-    !
-    ! !DESCRIPTION:
-    ! Calculates ozone stress for a single point, for just sunlit or shaded leaves
-    !
+       o3uptake)
+
     ! !USES:
     use shr_const_mod        , only : SHR_CONST_RGAS
     use pftconMod            , only : pftcon
@@ -409,9 +407,8 @@ contains
     real(r8) , intent(in)    :: tlai_old   ! tlai from last time step
     integer  , intent(in)    :: pft_type   ! vegetation type, for indexing into pftvarcon arrays
     real(r8) , intent(inout) :: o3uptake   ! ozone entering the leaf
-    real(r8) , intent(out)   :: o3coefv    ! ozone coefficient for photosynthesis (0 - 1)
-    real(r8) , intent(out)   :: o3coefg    ! ozone coefficient for conductance (0 - 1)
-    !
+
+!
     ! !LOCAL VARIABLES:
     integer  :: dtime          ! land model time step (sec)
     real(r8) :: dtimeh         ! time step in hours
@@ -422,12 +419,8 @@ contains
     real(r8) :: heal           ! o3uptake healing rate based on % of new leaves growing (mmol m^-2)
     real(r8) :: leafturn       ! leaf turnover time / mortality rate (per hour)
     real(r8) :: decay          ! o3uptake decay rate based on leaf lifetime (mmol m^-2)
-    real(r8) :: photoInt       ! intercept for photosynthesis
-    real(r8) :: photoSlope     ! slope for photosynthesis
-    real(r8) :: condInt        ! intercept for conductance
-    real(r8) :: condSlope      ! slope for conductance
-
-    character(len=*), parameter :: subname = 'CalcOzoneStressOnePoint'
+    
+    character(len=*), parameter :: subname = 'CalcOzoneUptakeOnePoint'
     !-----------------------------------------------------------------------
 
     ! convert o3 from mol/mol to nmol m^-3
@@ -472,6 +465,52 @@ contains
     else
        o3uptake = 0._r8
     end if
+
+  
+  end subroutine CalcOzoneUptakeOnePoint
+
+  !-----------------------------------------------------------------------
+  subroutine CalcOzoneStressOnePoint( &
+       forc_ozone, forc_pbot, forc_th, &
+       rs, rb, ram, &
+       tlai, tlai_old, pft_type, &
+       o3uptake, o3coefv, o3coefg)
+    !
+    ! !DESCRIPTION:
+    ! Calculates ozone stress for a single point, for just sunlit or shaded leaves
+    !
+    ! !USES:
+    use shr_const_mod        , only : SHR_CONST_RGAS
+    use pftconMod            , only : pftcon
+    use clm_time_manager     , only : get_step_size
+    !
+    ! !ARGUMENTS:
+    real(r8) , intent(in)    :: forc_ozone ! ozone partial pressure (mol/mol)
+    real(r8) , intent(in)    :: forc_pbot  ! atmospheric pressure (Pa)
+    real(r8) , intent(in)    :: forc_th    ! atmospheric potential temperature (K)
+    real(r8) , intent(in)    :: rs         ! leaf stomatal resistance (s/m)
+    real(r8) , intent(in)    :: rb         ! boundary layer resistance (s/m)
+    real(r8) , intent(in)    :: ram        ! aerodynamical resistance (s/m)
+    real(r8) , intent(in)    :: tlai       ! one-sided leaf area index, no burying by snow
+    real(r8) , intent(in)    :: tlai_old   ! tlai from last time step
+    integer  , intent(in)    :: pft_type   ! vegetation type, for indexing into pftvarcon arrays
+    real(r8) , intent(inout) :: o3uptake   ! ozone entering the leaf
+    real(r8) , intent(out)   :: o3coefv    ! ozone coefficient for photosynthesis (0 - 1)
+    real(r8) , intent(out)   :: o3coefg    ! ozone coefficient for conductance (0 - 1)
+    !
+    ! !LOCAL VARIABLES:
+    real(r8) :: photoInt       ! intercept for photosynthesis
+    real(r8) :: photoSlope     ! slope for photosynthesis
+    real(r8) :: condInt        ! intercept for conductance
+    real(r8) :: condSlope      ! slope for conductance
+
+    character(len=*), parameter :: subname = 'CalcOzoneStressOnePoint'
+    !-----------------------------------------------------------------------
+
+    call CalcOzoneUptakeOnePoint(forc_ozone, forc_pbot, forc_th, &
+         rs, rb, ram, &
+         tlai, tlai_old, pft_type, &
+         o3uptake)
 
 
     if (o3uptake == 0._r8) then
