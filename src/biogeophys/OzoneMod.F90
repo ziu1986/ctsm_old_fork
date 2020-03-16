@@ -55,10 +55,10 @@ module OzoneMod
      procedure, public :: Restart
      procedure, public :: CalcOzoneStress
 
-     ! Private routines
-     procedure, private :: InitAllocate
-     procedure, private :: InitHistory
-     procedure, private :: InitCold
+     ! Former private routines
+     procedure, public :: InitAllocate
+     procedure, public :: InitHistory
+     procedure, public :: InitCold
 
      ! Calculate ozone stress for a single point, for just sunlit or shaded leaves
      procedure, private, nopass :: CalcOzoneStressOnePoint

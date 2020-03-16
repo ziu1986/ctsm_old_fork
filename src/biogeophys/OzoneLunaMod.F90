@@ -14,7 +14,7 @@ module OzoneLunaMod
   use decompMod   , only : bounds_type
   use clm_varcon  , only : spval
   use shr_log_mod , only : errMsg => shr_log_errMsg
-  use OzoneBaseMod, only : ozone_base_type
+  use OzoneMod, only : ozone_type
   use abortutils  , only : endrun
 
   implicit none
@@ -22,12 +22,12 @@ module OzoneLunaMod
   private
 
   ! !PUBLIC TYPES:
-  type, extends(ozone_base_type), public :: ozone_luna_type
+  type, extends(ozone_type), public :: ozone_luna_type
      private
      ! Private data members
-     ! May need some more later on
-     real(r8), pointer :: o3uptakesha_patch(:) ! ozone dose, shaded leaves (mmol O3/m^2)
-     real(r8), pointer :: o3uptakesun_patch(:) ! ozone dose, sunlit leaves (mmol O3/m^2)
+     ! From ozone_type
+     !real(r8), pointer :: o3uptakesha_patch(:) ! ozone dose, shaded leaves (mmol O3/m^2)
+     !real(r8), pointer :: o3uptakesun_patch(:) ! ozone dose, sunlit leaves (mmol O3/m^2)
      real(r8), pointer, public :: o3coefvcmaxsha_patch(:)  ! ozone coefficient for max. carboxylation rate, shaded leaves (0 - 1)
      real(r8), pointer, public :: o3coefvcmaxsun_patch(:)  ! ozone coefficient for max. carboxylation rate, sunlit leaves (0 - 1)
      real(r8), pointer, public :: o3coefjmaxsha_patch(:)  ! ozone coefficient for max. electron transport rate, shaded leaves (0 - 1)
@@ -41,9 +41,9 @@ module OzoneLunaMod
      procedure, public :: CalcOzoneStress
      
      ! Private routines
-     procedure, private :: InitAllocate
-     procedure, private :: InitHistory
-     procedure, private :: InitCold
+     procedure, private :: InitAllocateLuna
+     procedure, private :: InitHistoryLuna
+     procedure, private :: InitColdLuna
   end type ozone_luna_type
 
   interface ozone_luna_type
@@ -127,14 +127,14 @@ contains
     type(bounds_type), intent(in)    :: bounds
     !-----------------------------------------------------------------------
 
-    call this%InitAllocate(bounds)
-    call this%InitHistory(bounds)
-    call this%InitCold(bounds)
+    call this%InitAllocateLuna(bounds)
+    call this%InitHistoryLuna(bounds)
+    call this%InitColdLuna(bounds)
     
   end subroutine Init
 
 !-----------------------------------------------------------------------
-  subroutine InitAllocate(this, bounds)
+  subroutine InitAllocateLuna(this, bounds)
     !
     ! !DESCRIPTION:
     ! Allocate memory for ozone data structure
@@ -153,20 +153,21 @@ contains
     begp = bounds%begp
     endp = bounds%endp
 
-    call this%InitAllocateBase(bounds)
-    
-    allocate(this%o3uptakesha_patch(begp:endp)) ; this%o3uptakesha_patch(:) = nan
-    allocate(this%o3uptakesun_patch(begp:endp)) ; this%o3uptakesun_patch(:) = nan
+    call this%InitAllocate(bounds)
+    ! From ozone_type
+    !allocate(this%o3uptakesha_patch(begp:endp)) ; this%o3uptakesha_patch(:) = nan
+    !allocate(this%o3uptakesun_patch(begp:endp)) ; this%o3uptakesun_patch(:) = nan
+    !allocate(this%tlai_old_patch(begp:endp))    ; this%tlai_old_patch(:) = nan
     allocate(this%o3coefvcmaxsha_patch(begp:endp))  ; this%o3coefvcmaxsha_patch(:) = nan
     allocate(this%o3coefvcmaxsun_patch(begp:endp))  ; this%o3coefvcmaxsun_patch(:) = nan
     allocate(this%o3coefjmaxsha_patch(begp:endp))  ; this%o3coefjmaxsha_patch(:) = nan
     allocate(this%o3coefjmaxsun_patch(begp:endp))  ; this%o3coefjmaxsun_patch(:) = nan
-    !allocate(this%tlai_old_patch(begp:endp))    ; this%tlai_old_patch(:) = nan
+    
 
-  end subroutine InitAllocate
+  end subroutine InitAllocateLuna
 
  !-----------------------------------------------------------------------
-  subroutine InitHistory(this, bounds)
+  subroutine InitHistoryLuna(this, bounds)
     !
     ! !DESCRIPTION:
     ! Initialize ozone history variables
@@ -181,26 +182,28 @@ contains
     ! !LOCAL VARIABLES:
     integer :: begp, endp
     
-    character(len=*), parameter :: subname = 'InitHistory'
+    character(len=*), parameter :: subname = 'InitHistoryLuna'
     !-----------------------------------------------------------------------
     
     begp = bounds%begp
     endp = bounds%endp
 
-    this%o3uptakesun_patch(begp:endp) = spval
-    call hist_addfld1d (fname='O3UPTAKESUN', units='mmol/m^2', &
-         avgflag='A', long_name='total ozone flux into sunlit leaves', &
-         ptr_patch=this%o3uptakesun_patch)
+    call this%InitHistory(bounds)
+    ! From ozone_type
+    !this%o3uptakesun_patch(begp:endp) = spval
+    !call hist_addfld1d (fname='O3UPTAKESUN', units='mmol/m^2', &
+    !     avgflag='A', long_name='total ozone flux into sunlit leaves', &
+    !     ptr_patch=this%o3uptakesun_patch)
 
-    this%o3uptakesha_patch(begp:endp) = spval
-    call hist_addfld1d (fname='O3UPTAKESHA', units='mmol/m^2', &
-         avgflag='A', long_name='total ozone flux into shaded leaves', &
-         ptr_patch=this%o3uptakesha_patch)
+    !this%o3uptakesha_patch(begp:endp) = spval
+    !call hist_addfld1d (fname='O3UPTAKESHA', units='mmol/m^2', &
+    !     avgflag='A', long_name='total ozone flux into shaded leaves', &
+    !     ptr_patch=this%o3uptakesha_patch)
 
-  end subroutine InitHistory
+  end subroutine InitHistoryLuna
  
 !-----------------------------------------------------------------------
-  subroutine InitCold(this, bounds)
+  subroutine InitColdLuna(this, bounds)
     !
     ! !DESCRIPTION:
     ! Perform cold-start initialization for ozone
@@ -212,16 +215,16 @@ contains
     ! !LOCAL VARIABLES:
     integer :: begp, endp
     
-    character(len=*), parameter :: subname = 'InitCold'
+    character(len=*), parameter :: subname = 'InitColdLuna'
     !-----------------------------------------------------------------------
 
     begp = bounds%begp
     endp = bounds%endp
 
-    call this%InitColdBase(bounds)
-
-    this%o3uptakesha_patch(begp:endp) = 0._r8
-    this%o3uptakesun_patch(begp:endp) = 0._r8
+    call this%InitCold(bounds)
+    ! From zone_type
+    !this%o3uptakesha_patch(begp:endp) = 0._r8
+    !this%o3uptakesun_patch(begp:endp) = 0._r8
     this%o3coefvcmaxsha_patch(begp:endp) = 0._r8
     this%o3coefvcmaxsun_patch(begp:endp) = 0._r8
     this%o3coefjmaxsha_patch(begp:endp) = 0._r8
@@ -229,7 +232,7 @@ contains
     
     !this%tlai_old_patch(begp:endp) = 0._r8
 
-  end subroutine InitCold
+  end subroutine InitColdLuna
 
 !-----------------------------------------------------------------------
   subroutine Restart(this, bounds, ncid, flag)
@@ -256,16 +259,16 @@ contains
     !     dim1name='pft', &
     !     long_name='one-sided leaf area index, from previous timestep, for ozone calculations', units='', &
     !     readvar=readvar, interpinic_flag='interp', data=this%tlai_old_patch)
+    ! From ozone_type
+    ! ! ! call restartvar(ncid=ncid, flag=flag, varname='o3uptakesha', xtype=ncd_double, &
+    ! ! !      dim1name='pft', &
+    ! ! !      long_name='ozone uptake for shaded leaves', units='mmol m^-3', &
+    ! ! !      readvar=readvar, interpinic_flag='interp', data=this%o3uptakesha_patch)
 
-    call restartvar(ncid=ncid, flag=flag, varname='o3uptakesha', xtype=ncd_double, &
-         dim1name='pft', &
-         long_name='ozone uptake for shaded leaves', units='mmol m^-3', &
-         readvar=readvar, interpinic_flag='interp', data=this%o3uptakesha_patch)
-
-    call restartvar(ncid=ncid, flag=flag, varname='o3uptakesun', xtype=ncd_double, &
-         dim1name='pft', &
-         long_name='ozone uptake for sunlit leaves', units='mmol m^-3', &
-         readvar=readvar, interpinic_flag='interp', data=this%o3uptakesun_patch)
+    ! ! ! call restartvar(ncid=ncid, flag=flag, varname='o3uptakesun', xtype=ncd_double, &
+    ! ! !      dim1name='pft', &
+    ! ! !      long_name='ozone uptake for sunlit leaves', units='mmol m^-3', &
+    ! ! !      readvar=readvar, interpinic_flag='interp', data=this%o3uptakesun_patch)
 
     call restartvar(ncid=ncid, flag=flag, varname='o3coefvcmaxsun', xtype=ncd_double, &
          dim1name='pft', &
