@@ -27,9 +27,9 @@ module OzoneMod
   ! !PUBLIC TYPES:
   type, extends(ozone_base_type), public :: ozone_type
      private
-     ! Private data members
-     real(r8), pointer :: o3uptakesha_patch(:) ! ozone dose, shaded leaves (mmol O3/m^2)
-     real(r8), pointer :: o3uptakesun_patch(:) ! ozone dose, sunlit leaves (mmol O3/m^2)
+     ! Former private data members
+     real(r8), pointer, public :: o3uptakesha_patch(:) ! ozone dose, shaded leaves (mmol O3/m^2)
+     real(r8), pointer, public :: o3uptakesun_patch(:) ! ozone dose, sunlit leaves (mmol O3/m^2)
 
      ! NOTE(wjs, 2014-09-29) tlai_old_patch really belongs alongside tlai_patch in
      ! CanopyStateType.  But there are problems with any way I can think to implement
@@ -47,7 +47,7 @@ module OzoneMod
      !   Then the setter method would also set tlai_old. This feels like the most robust
      !   solution, but we don't have any precedent for using getters and setters for data
      !   arrays.
-     real(r8), pointer :: tlai_old_patch(:)  ! tlai from last time step
+     real(r8), pointer, public :: tlai_old_patch(:)  ! tlai from last time step
 
    contains
      ! Public routines

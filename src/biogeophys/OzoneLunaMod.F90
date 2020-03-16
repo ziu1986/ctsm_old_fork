@@ -255,20 +255,21 @@ contains
 
     character(len=*), parameter :: subname = 'Restart'
     !-----------------------------------------------------------------------
-    !call restartvar(ncid=ncid, flag=flag, varname='o3_tlaiold', xtype=ncd_double, &
-    !     dim1name='pft', &
-    !     long_name='one-sided leaf area index, from previous timestep, for ozone calculations', units='', &
-    !     readvar=readvar, interpinic_flag='interp', data=this%tlai_old_patch)
     ! From ozone_type
-    ! ! ! call restartvar(ncid=ncid, flag=flag, varname='o3uptakesha', xtype=ncd_double, &
-    ! ! !      dim1name='pft', &
-    ! ! !      long_name='ozone uptake for shaded leaves', units='mmol m^-3', &
-    ! ! !      readvar=readvar, interpinic_flag='interp', data=this%o3uptakesha_patch)
+    call restartvar(ncid=ncid, flag=flag, varname='o3_tlaiold', xtype=ncd_double, &
+         dim1name='pft', &
+         long_name='one-sided leaf area index, from previous timestep, for ozone calculations', units='', &
+         readvar=readvar, interpinic_flag='interp', data=this%tlai_old_patch)
+    
+    call restartvar(ncid=ncid, flag=flag, varname='o3uptakesha', xtype=ncd_double, &
+         dim1name='pft', &
+         long_name='ozone uptake for shaded leaves', units='mmol m^-3', &
+         readvar=readvar, interpinic_flag='interp', data=this%o3uptakesha_patch)
 
-    ! ! ! call restartvar(ncid=ncid, flag=flag, varname='o3uptakesun', xtype=ncd_double, &
-    ! ! !      dim1name='pft', &
-    ! ! !      long_name='ozone uptake for sunlit leaves', units='mmol m^-3', &
-    ! ! !      readvar=readvar, interpinic_flag='interp', data=this%o3uptakesun_patch)
+    call restartvar(ncid=ncid, flag=flag, varname='o3uptakesun', xtype=ncd_double, &
+         dim1name='pft', &
+         long_name='ozone uptake for sunlit leaves', units='mmol m^-3', &
+         readvar=readvar, interpinic_flag='interp', data=this%o3uptakesun_patch)
 
     call restartvar(ncid=ncid, flag=flag, varname='o3coefvcmaxsun', xtype=ncd_double, &
          dim1name='pft', &
