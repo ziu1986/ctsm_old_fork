@@ -39,12 +39,15 @@ module OzoneLunaMod
      procedure, public :: Init
      procedure, public :: Restart
      procedure, public :: CalcOzoneStress
-     procedure, public :: Acc24_OzoneStress_Luna
      
      ! Private routines
      procedure, private :: InitAllocateLuna
      procedure, private :: InitHistoryLuna
      procedure, private :: InitColdLuna
+
+     ! Calculate ozone stress for a single point, for just sunlit or shaded leaves
+     procedure, public :: Acc24_OzoneStress_Luna
+     procedure, private, nopass :: Acc24_OzoneStressOnePoint_Luna
   end type ozone_luna_type
 
   interface ozone_luna_type
@@ -339,8 +342,7 @@ contains
     SHR_ASSERT_ALL((ubound(ram) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
     SHR_ASSERT_ALL((ubound(tlai) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
 
-    ! Need to make a dummy call to either CalcOzoneStressOnePoint or CalcOzoneUptake to get accumulated
-    ! ozone over a days period.
+    
     associate( &
          o3uptakesha => this%o3uptakesha_patch                , & ! Output: [real(r8) (:)] ozone dose
          o3uptakesun => this%o3uptakesun_patch                , & ! Output: [real(r8) (:)] ozone dose
@@ -350,6 +352,9 @@ contains
     do fp = 1, num_exposedvegp
        p = filter_exposedvegp(fp)
        c = patch%column(p)
+
+       ! Need to make a dummy call to CalcOzoneUptake to update accumulated
+       ! ozone over a days period.
 
        ! Ozone uptake for shaded leaves
        call this%CalcOzoneUptakeOnePoint( &
@@ -382,34 +387,115 @@ contains
   end subroutine CalcOzoneStress
 
 !-----------------------------------------------------------------------  
-  subroutine Acc24_OzoneStress_Luna(this, bounds, num_exposedvegp, filter_exposedvegp, &
-       forc_pbot, forc_th, rssun, rssha, rb, ram, tlai)
+  subroutine Acc24_OzoneStressOnePoint_Luna(pft_type, o3uptake, &
+        o3coefvcmax, o3coefjmax)
 
+    ! !USES:
+    use pftconMod            , only : pftcon
+    !
+    ! ! ARGUMENTS:
+    integer  , intent(in)    :: pft_type    ! vegetation type, for indexing into pftvarcon arrays
+    real(r8) , intent(in)    :: o3uptake    ! ozone entering the leaf
+    real(r8) , intent(inout) :: o3coefvcmax ! ozone coefficient for max. carboxylation rate
+    real(r8) , intent(inout) :: o3coefjmax  ! ozone coefficient for max. electron transport rate
+    !
+    ! !LOCAL VARIABLES:
+    real(r8) :: vcmaxInt       ! intercept for max. carboxylation rate
+    real(r8) :: vcmaxSlope     ! slope for max. carboxylation rate
+    real(r8) :: jmaxInt        ! intercept for max. electron transport rate
+    real(r8) :: jmaxSlope      ! slope for max. electron transport rate
+
+    if ( o3uptake == 0._r8 ) then
+       ! No o3 damage if no o3 uptake
+       o3coefvcmax = 1._r8
+       o3coefjmax = 1._r8
+    else
+       ! Determine parameter values for this pft
+       ! TODO(wjs, 2014-10-01) Once these parameters are moved into the params file, this
+       ! logic can be removed.
+       if (pft_type>3) then
+          if (pftcon%woody(pft_type)==0) then
+             vcmaxInt   = nonwoodyVcmaxInt
+             vcmaxSlope = nonwoodyVcmaxSlope
+             jmaxInt    = nonwoodyJmaxInt
+             jmaxSlope  = nonwoodyJmaxSlope
+          else
+             vcmaxInt   = broadleafVcmaxInt
+             vcmaxSlope = broadleafVcmaxSlope
+             jmaxInt    = broadleafJmaxInt
+             jmaxSlope  = broadleafJmaxSlope
+          end if
+       else
+          vcmaxInt   = needleleafVcmaxInt
+          vcmaxSlope = needleleafVcmaxSlope
+          jmaxInt    = needleleafJmaxInt
+          jmaxSlope  = needleleafJmaxSlope
+       end if
+       ! Apply parameter values to compute o3 coefficients
+       o3coefvcmax = max(0._r8, min(1._r8, vcmaxInt + vcmaxSlope * o3uptake))
+       o3coefjmax = max(0._r8, min(1._r8, jmaxInt  + jmaxSlope  * o3uptake))
+       
+    end if
+
+
+  end subroutine Acc24_OzoneStressOnePoint_Luna
+
+!-----------------------------------------------------------------------  
+  subroutine Acc24_OzoneStress_Luna(this, num_exposedvegp, filter_exposedvegp, &
+       pft_type, o3coefvcmax, o3coefjmax)
+    !
+    ! !DESCRIPTION:
+    ! Calculate accumulated 24h ozone stress for luna.
+    !
+    ! !USES:
+    use PatchType            , only : patch
+    use pftconMod            , only : pftcon
+    !
+    ! !ARGUMENTS:
     class(ozone_luna_type) , intent(inout) :: this
-    type(bounds_type)      , intent(in)    :: bounds
-    integer  , intent(in) :: num_exposedvegp           ! number of points in filter_exposedvegp
-    integer  , intent(in) :: filter_exposedvegp(:)     ! patch filter for non-snow-covered veg
-    real(r8) , intent(in) :: forc_pbot( bounds%begc: ) ! atmospheric pressure (Pa)
-    real(r8) , intent(in) :: forc_th( bounds%begc: )   ! atmospheric potential temperature (K)
-    real(r8) , intent(in) :: rssun( bounds%begp: )     ! leaf stomatal resistance, sunlit leaves (s/m)
-    real(r8) , intent(in) :: rssha( bounds%begp: )     ! leaf stomatal resistance, shaded leaves (s/m)
-    real(r8) , intent(in) :: rb( bounds%begp: )        ! boundary layer resistance (s/m)
-    real(r8) , intent(in) :: ram( bounds%begp: )       ! aerodynamical resistance (s/m)
-    real(r8) , intent(in) :: tlai( bounds%begp: )      ! one-sided leaf area index, no burying by snow
+    integer  , intent(in)    :: num_exposedvegp        ! number of points in filter_exposedvegp
+    integer  , intent(in)    :: filter_exposedvegp(:)  ! patch filter for non-snow-covered veg
+    integer  , intent(in)    :: pft_type               ! vegetation type, for indexing into pftvarcon arrays
+    real(r8) , intent(out)   :: o3coefvcmax            ! ozone coefficient for max. carbolyxation rate (0 - 1)
+    real(r8) , intent(out)   :: o3coefjmax             ! ozone coefficient for max. electron transport rate (0 - 1)
+    !
+    ! !LOCAL VARIABLES:
+    integer  :: fp             ! filter index
+    integer  :: p              ! patch index
+    integer  :: c              ! column index
 
-    ! Enforce expected array sizes (mainly so that a debug-mode threaded test with
-    ! ozone-off can pick up problems with the call to this routine)
-    SHR_ASSERT_ALL((ubound(forc_pbot) == (/bounds%endc/)), errMsg(sourcefile, __LINE__))
-    SHR_ASSERT_ALL((ubound(forc_th) == (/bounds%endc/)), errMsg(sourcefile, __LINE__))
-    SHR_ASSERT_ALL((ubound(rssun) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
-    SHR_ASSERT_ALL((ubound(rssha) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
-    SHR_ASSERT_ALL((ubound(rb) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
-    SHR_ASSERT_ALL((ubound(ram) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
-    SHR_ASSERT_ALL((ubound(tlai) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
+    character(len=*), parameter :: subname = 'Acc24_OzoneStress_Luna'
+    !-----------------------------------------------------------------------
 
-    ! Need to make another call to either CalcOzoneUptake to get accumulated ozone?
-    ! Most likely not ozoneuptake should have been updated in the previous timestep.
+    associate( &
+         o3uptakesha => this%o3uptakesha_patch                , & ! Output: [real(r8) (:)] ozone dose
+         o3uptakesun => this%o3uptakesun_patch                , & ! Output: [real(r8) (:)] ozone dose
+         o3coefvcmaxsha => this%o3coefvcmaxsha_patch          , & ! Output: [real(r8) (:)] ozone coef vcmax sha
+         o3coefvcmaxsun => this%o3coefvcmaxsun_patch          , & ! Output: [real(r8) (:)] ozone coef vcmax sun
+         o3coefjmaxsha => this%o3coefjmaxsha_patch            , & ! Output: [real(r8) (:)] ozone coef jmax sha
+         o3coefjmaxsun => this%o3coefjmaxsun_patch              & ! Output: [real(r8) (:)] ozone coef jmax sun
+         )
+      
+      do fp = 1, num_exposedvegp
+         p = filter_exposedvegp(fp)
+         c = patch%column(p)
 
+         ! Need to make another call to either CalcOzoneUptake to get accumulated ozone?
+         ! Most likely not... ozoneuptake should have been updated in the previous timestep.
+
+         ! Ozone damage for shaded leaves
+         call this%Acc24_OzoneStressOnePoint_Luna( &
+              pft_type=patch%itype(p), o3uptake=o3uptakesun(p), &
+              o3coefvcmax=o3coefvcmaxsha(p), o3coefjmax=o3coefjmaxsha(p))
+
+         ! Ozone damage for sunlit leaves
+         call this%Acc24_OzoneStressOnePoint_Luna( &
+              pft_type=patch%itype(p), o3uptake=o3uptakesun(p), &
+              o3coefvcmax=o3coefvcmaxsun(p), o3coefjmax=o3coefjmaxsun(p))
+
+
+      end do
+    end associate
 
   end subroutine Acc24_OzoneStress_Luna
 

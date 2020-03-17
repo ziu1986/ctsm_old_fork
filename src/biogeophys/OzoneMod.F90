@@ -408,7 +408,7 @@ contains
     integer  , intent(in)    :: pft_type   ! vegetation type, for indexing into pftvarcon arrays
     real(r8) , intent(inout) :: o3uptake   ! ozone entering the leaf
 
-!
+    !
     ! !LOCAL VARIABLES:
     integer  :: dtime          ! land model time step (sec)
     real(r8) :: dtimeh         ! time step in hours
