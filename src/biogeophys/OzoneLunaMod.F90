@@ -39,6 +39,7 @@ module OzoneLunaMod
      procedure, public :: Init
      procedure, public :: Restart
      procedure, public :: CalcOzoneStress
+     procedure, public :: Acc24_OzoneStress_Luna
      
      ! Private routines
      procedure, private :: InitAllocateLuna
@@ -300,6 +301,89 @@ contains
   !-----------------------------------------------------------------------
   subroutine CalcOzoneStress(this, bounds, num_exposedvegp, filter_exposedvegp, &
        forc_pbot, forc_th, rssun, rssha, rb, ram, tlai)
+    !
+    ! !DESCRIPTION:
+    ! Calculate ozone uptake for each timestep.
+    ! For consistency with the calls from CanopyFluxes, ozone coefficiens g/v are set to 1, respectively.
+    !
+    ! !USES:
+    use PatchType            , only : patch
+    !
+    ! !ARGUMENTS:
+    class(ozone_luna_type) , intent(inout) :: this
+    type(bounds_type)      , intent(in)    :: bounds
+    integer  , intent(in) :: num_exposedvegp           ! number of points in filter_exposedvegp
+    integer  , intent(in) :: filter_exposedvegp(:)     ! patch filter for non-snow-covered veg
+    real(r8) , intent(in) :: forc_pbot( bounds%begc: ) ! atmospheric pressure (Pa)
+    real(r8) , intent(in) :: forc_th( bounds%begc: )   ! atmospheric potential temperature (K)
+    real(r8) , intent(in) :: rssun( bounds%begp: )     ! leaf stomatal resistance, sunlit leaves (s/m)
+    real(r8) , intent(in) :: rssha( bounds%begp: )     ! leaf stomatal resistance, shaded leaves (s/m)
+    real(r8) , intent(in) :: rb( bounds%begp: )        ! boundary layer resistance (s/m)
+    real(r8) , intent(in) :: ram( bounds%begp: )       ! aerodynamical resistance (s/m)
+    real(r8) , intent(in) :: tlai( bounds%begp: )      ! one-sided leaf area index, no burying by snow
+    ! !LOCAL VARIABLES:
+    integer  :: fp             ! filter index
+    integer  :: p              ! patch index
+    integer  :: c              ! column index
+
+    character(len=*), parameter :: subname = 'CalcOzoneStress'
+    !-----------------------------------------------------------------------
+    
+    ! Enforce expected array sizes (mainly so that a debug-mode threaded test with
+    ! ozone-off can pick up problems with the call to this routine)
+    SHR_ASSERT_ALL((ubound(forc_pbot) == (/bounds%endc/)), errMsg(sourcefile, __LINE__))
+    SHR_ASSERT_ALL((ubound(forc_th) == (/bounds%endc/)), errMsg(sourcefile, __LINE__))
+    SHR_ASSERT_ALL((ubound(rssun) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
+    SHR_ASSERT_ALL((ubound(rssha) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
+    SHR_ASSERT_ALL((ubound(rb) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
+    SHR_ASSERT_ALL((ubound(ram) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
+    SHR_ASSERT_ALL((ubound(tlai) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
+
+    ! Need to make a dummy call to either CalcOzoneStressOnePoint or CalcOzoneUptake to get accumulated
+    ! ozone over a days period.
+    associate( &
+         o3uptakesha => this%o3uptakesha_patch                , & ! Output: [real(r8) (:)] ozone dose
+         o3uptakesun => this%o3uptakesun_patch                , & ! Output: [real(r8) (:)] ozone dose
+         tlai_old    => this%tlai_old_patch                     & ! Output: [real(r8) (:)] tlai from last time step
+         )
+         
+    do fp = 1, num_exposedvegp
+       p = filter_exposedvegp(fp)
+       c = patch%column(p)
+
+       ! Ozone uptake for shaded leaves
+       call this%CalcOzoneUptakeOnePoint( &
+            forc_ozone=forc_ozone, forc_pbot=forc_pbot(c), forc_th=forc_th(c), &
+            rs=rssha(p), rb=rb(p), ram=ram(p), &
+            tlai=tlai(p), tlai_old=tlai_old(p), pft_type=patch%itype(p), &
+            o3uptake=o3uptakesha(p))
+
+       ! Ozone uptake for sunlit leaves
+       call this%CalcOzoneUptakeOnePoint( &
+            forc_ozone=forc_ozone, forc_pbot=forc_pbot(c), forc_th=forc_th(c), &
+            rs=rssun(p), rb=rb(p), ram=ram(p), &
+            tlai=tlai(p), tlai_old=tlai_old(p), pft_type=patch%itype(p), &
+            o3uptake=o3uptakesun(p))
+
+       tlai_old(p) = tlai(p)
+
+    end do
+
+    end associate
+
+    ! Explicitly set outputs to 1. This isn't really needed, because they should still be
+    ! at 1 from cold-start initialization, but do this for clarity here.
+
+    this%o3coefvsha_patch(bounds%begp:bounds%endp) = 1._r8
+    this%o3coefvsun_patch(bounds%begp:bounds%endp) = 1._r8
+    this%o3coefgsha_patch(bounds%begp:bounds%endp) = 1._r8
+    this%o3coefgsun_patch(bounds%begp:bounds%endp) = 1._r8
+
+  end subroutine CalcOzoneStress
+
+!-----------------------------------------------------------------------  
+  subroutine Acc24_OzoneStress_Luna(this, bounds, num_exposedvegp, filter_exposedvegp, &
+       forc_pbot, forc_th, rssun, rssha, rb, ram, tlai)
 
     class(ozone_luna_type) , intent(inout) :: this
     type(bounds_type)      , intent(in)    :: bounds
@@ -323,15 +407,10 @@ contains
     SHR_ASSERT_ALL((ubound(ram) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
     SHR_ASSERT_ALL((ubound(tlai) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
 
-    ! Explicitly set outputs to 1. This isn't really needed, because they should still be
-    ! at 1 from cold-start initialization, but do this for clarity here.
+    ! Need to make another call to either CalcOzoneUptake to get accumulated ozone?
+    ! Most likely not ozoneuptake should have been updated in the previous timestep.
 
-    this%o3coefvsha_patch(bounds%begp:bounds%endp) = 1._r8
-    this%o3coefvsun_patch(bounds%begp:bounds%endp) = 1._r8
-    this%o3coefgsha_patch(bounds%begp:bounds%endp) = 1._r8
-    this%o3coefgsun_patch(bounds%begp:bounds%endp) = 1._r8
 
-  end subroutine CalcOzoneStress
-  
+  end subroutine Acc24_OzoneStress_Luna
 
 end module OzoneLunaMod
