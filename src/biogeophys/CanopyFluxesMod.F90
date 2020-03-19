@@ -1344,7 +1344,8 @@ contains
                     surfalb_inst, &
                     solarabs_inst, &
                     waterstate_inst,&
-                    frictionvel_inst)        
+                    frictionvel_inst, &
+                    ozone_inst)        
                
                call Clear24_Climate_LUNA(bounds, fn, filterp, &
                     canopystate_inst, photosyns_inst, &
