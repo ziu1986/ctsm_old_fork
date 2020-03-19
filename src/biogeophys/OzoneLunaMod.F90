@@ -203,6 +203,26 @@ contains
     !     avgflag='A', long_name='total ozone flux into shaded leaves', &
     !     ptr_patch=this%o3uptakesha_patch)
 
+    this%o3coefvcmaxsun_patch(begp:endp) = spval
+    call hist_addfld1d (fname='O3COEFVCMAXSUN', units='1', &
+         avgflag='A', long_name='LUNA ozone coefficient for Vcmax for sunlit leaves', &
+         ptr_patch=this%o3coefvcmaxsun_patch)
+
+    this%o3coefvcmaxsha_patch(begp:endp) = spval
+    call hist_addfld1d (fname='O3COEFVCMAXSHA', units='1', &
+         avgflag='A', long_name='LUNA ozone coefficient for Vcmax for shaded leaves', &
+         ptr_patch=this%o3coefvcmaxsha_patch)
+
+    this%o3coefjmaxsun_patch(begp:endp) = spval
+    call hist_addfld1d (fname='O3COEFJMAXSUN', units='1', &
+         avgflag='A', long_name='LUNA ozone coefficient for Jmax for sunlit leaves', &
+         ptr_patch=this%o3coefjmaxsun_patch)
+
+    this%o3coefjmaxsha_patch(begp:endp) = spval
+    call hist_addfld1d (fname='O3COEFJMAXSHA', units='1', &
+         avgflag='A', long_name='LUNA ozone coefficient for Jmax for shaded leaves', &
+         ptr_patch=this%o3coefjmaxsha_patch)
+
   end subroutine InitHistoryLuna
  
 !-----------------------------------------------------------------------
