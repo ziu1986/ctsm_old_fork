@@ -28,12 +28,11 @@ module OzoneLunaMod
      ! From ozone_type
      !real(r8), pointer :: o3uptakesha_patch(:) ! ozone dose, shaded leaves (mmol O3/m^2)
      !real(r8), pointer :: o3uptakesun_patch(:) ! ozone dose, sunlit leaves (mmol O3/m^2)
-     real(r8), pointer, public :: o3coefvcmaxsha_patch(:)  ! ozone coefficient for max. carboxylation rate, shaded leaves (0 - 1)
-     real(r8), pointer, public :: o3coefvcmaxsun_patch(:)  ! ozone coefficient for max. carboxylation rate, sunlit leaves (0 - 1)
-     real(r8), pointer, public :: o3coefjmaxsha_patch(:)  ! ozone coefficient for max. electron transport rate, shaded leaves (0 - 1)
-     real(r8), pointer, public :: o3coefjmaxsun_patch(:)  ! ozone coefficient for max. electron transport rate, sunlit leaves (0 - 1)
+     !real(r8), pointer, public :: o3coefvcmaxsha_patch(:)  ! ozone coefficient for max. carboxylation rate, shaded leaves (0 - 1)
+     !real(r8), pointer, public :: o3coefvcmaxsun_patch(:)  ! ozone coefficient for max. carboxylation rate, sunlit leaves (0 - 1)
+     !real(r8), pointer, public :: o3coefjmaxsha_patch(:)  ! ozone coefficient for max. electron transport rate, shaded leaves (0 - 1)
+     !real(r8), pointer, public :: o3coefjmaxsun_patch(:)  ! ozone coefficient for max. electron transport rate, sunlit leaves (0 - 1)
   
-
    contains
      ! Public routines
      procedure, public :: Init
@@ -441,7 +440,7 @@ contains
   end subroutine Acc24_OzoneStressOnePoint_Luna
 
 !-----------------------------------------------------------------------  
-  subroutine Acc24_OzoneStress_Luna(this, num_exposedvegp, filter_exposedvegp)
+  subroutine Acc24_OzoneStress_Luna(this, bounds, num_exposedvegp, filter_exposedvegp)
     !
     ! !DESCRIPTION:
     ! Calculate accumulated 24h ozone stress for luna.
@@ -452,6 +451,7 @@ contains
     !
     ! !ARGUMENTS:
     class(ozone_luna_type) , intent(inout) :: this
+    type(bounds_type)      , intent(in)    :: bounds
     integer  , intent(in)    :: num_exposedvegp        ! number of points in filter_exposedvegp
     integer  , intent(in)    :: filter_exposedvegp(:)  ! patch filter for non-snow-covered veg
     !

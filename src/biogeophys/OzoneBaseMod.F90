@@ -25,6 +25,11 @@ module OzoneBaseMod
      real(r8), pointer, public :: o3coefvsun_patch(:)  ! ozone coefficient for photosynthesis, sunlit leaves (0 - 1)
      real(r8), pointer, public :: o3coefgsha_patch(:)  ! ozone coefficient for conductance, shaded leaves (0 - 1)
      real(r8), pointer, public :: o3coefgsun_patch(:)  ! ozone coefficient for conductance, sunlit leaves (0 - 1)
+     real(r8), pointer, public :: o3coefvcmaxsha_patch(:)  ! ozone coefficient for max. carboxylation rate, shaded leaves (0 - 1)
+     real(r8), pointer, public :: o3coefvcmaxsun_patch(:)  ! ozone coefficient for max. carboxylation rate, sunlit leaves (0 - 1)
+     real(r8), pointer, public :: o3coefjmaxsha_patch(:)  ! ozone coefficient for max. electron transport rate, shaded leaves (0 - 1)
+     real(r8), pointer, public :: o3coefjmaxsun_patch(:)  ! ozone coefficient for max. electron transport rate, sunlit leaves (0 - 1)
+  
      
      
    contains
@@ -32,6 +37,7 @@ module OzoneBaseMod
      procedure(Init_interface)            , public, deferred :: Init
      procedure(Restart_interface)         , public, deferred :: Restart
      procedure(CalcOzoneStress_interface) , public, deferred :: CalcOzoneStress
+     procedure(Acc24_OzoneStress_Luna_interface) , public, deferred :: Acc24_OzoneStress_Luna
 
      ! The following routines should only be called by extensions of the ozone_base_type
      procedure, public :: InitAllocateBase
@@ -78,6 +84,17 @@ module OzoneBaseMod
        real(r8) , intent(in) :: ram( bounds%begp: )       ! aerodynamical resistance (s/m)
        real(r8) , intent(in) :: tlai( bounds%begp: )      ! one-sided leaf area index, no burying by snow
      end subroutine CalcOzoneStress_interface
+
+     subroutine Acc24_OzoneStress_Luna_interface(this, bounds, num_exposedvegp, filter_exposedvegp)
+       use shr_kind_mod , only : r8 => shr_kind_r8
+       use decompMod    , only : bounds_type
+       import :: ozone_base_type
+
+       class(ozone_base_type) , intent(inout) :: this
+       type(bounds_type)      , intent(in)    :: bounds
+       integer  , intent(in) :: num_exposedvegp           ! number of points in filter_exposedvegp
+       integer  , intent(in) :: filter_exposedvegp(:)     ! patch filter for non-snow-covered veg
+     end subroutine Acc24_OzoneStress_Luna_interface
 
   end interface
      
