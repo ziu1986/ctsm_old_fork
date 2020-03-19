@@ -441,8 +441,7 @@ contains
   end subroutine Acc24_OzoneStressOnePoint_Luna
 
 !-----------------------------------------------------------------------  
-  subroutine Acc24_OzoneStress_Luna(this, num_exposedvegp, filter_exposedvegp, &
-       pft_type, o3coefvcmax, o3coefjmax)
+  subroutine Acc24_OzoneStress_Luna(this, num_exposedvegp, filter_exposedvegp)
     !
     ! !DESCRIPTION:
     ! Calculate accumulated 24h ozone stress for luna.
@@ -455,9 +454,6 @@ contains
     class(ozone_luna_type) , intent(inout) :: this
     integer  , intent(in)    :: num_exposedvegp        ! number of points in filter_exposedvegp
     integer  , intent(in)    :: filter_exposedvegp(:)  ! patch filter for non-snow-covered veg
-    integer  , intent(in)    :: pft_type               ! vegetation type, for indexing into pftvarcon arrays
-    real(r8) , intent(out)   :: o3coefvcmax            ! ozone coefficient for max. carbolyxation rate (0 - 1)
-    real(r8) , intent(out)   :: o3coefjmax             ! ozone coefficient for max. electron transport rate (0 - 1)
     !
     ! !LOCAL VARIABLES:
     integer  :: fp             ! filter index
