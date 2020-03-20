@@ -126,6 +126,11 @@ contains
     allocate(this%o3coefvsun_patch(begp:endp))  ; this%o3coefvsun_patch(:) = nan
     allocate(this%o3coefgsha_patch(begp:endp))  ; this%o3coefgsha_patch(:) = nan
     allocate(this%o3coefgsun_patch(begp:endp))  ; this%o3coefgsun_patch(:) = nan
+    allocate(this%o3coefvcmaxsha_patch(begp:endp))  ; this%o3coefvcmaxsha_patch(:) = nan
+    allocate(this%o3coefvcmaxsun_patch(begp:endp))  ; this%o3coefvcmaxsun_patch(:) = nan
+    allocate(this%o3coefjmaxsha_patch(begp:endp))  ; this%o3coefjmaxsha_patch(:) = nan
+    allocate(this%o3coefjmaxsun_patch(begp:endp))  ; this%o3coefjmaxsun_patch(:) = nan
+    
     
   end subroutine InitAllocateBase
 
@@ -157,6 +162,11 @@ contains
     this%o3coefvsun_patch(begp:endp) = 1._r8
     this%o3coefgsha_patch(begp:endp) = 1._r8
     this%o3coefgsun_patch(begp:endp) = 1._r8
+    this%o3coefvcmaxsha_patch(begp:endp) = 1._r8
+    this%o3coefvcmaxsun_patch(begp:endp) = 1._r8
+    this%o3coefjmaxsha_patch(begp:endp) = 1._r8
+    this%o3coefjmaxsun_patch(begp:endp) = 1._r8
+
 
   end subroutine InitColdBase
 
