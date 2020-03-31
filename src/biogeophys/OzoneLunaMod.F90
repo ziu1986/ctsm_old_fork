@@ -72,20 +72,27 @@ module OzoneLunaMod
 
   ! Data is only available for broadleaf species as of now 2020-03
   ! o3 intercepts and slopes for JmaxO3/Jmax0
-  real(r8), parameter :: needleleafJmaxInt   = 1._r8  ! units = unitless 
-  real(r8), parameter :: needleleafJmaxSlope = 0._r8      ! units = per mmol m^-2
-  real(r8), parameter :: broadleafJmaxInt    = 1._r8  ! units = unitless  
+  real(r8), parameter :: needleleafJmaxInt   = 1._r8           ! units = unitless 
+  real(r8), parameter :: needleleafJmaxSlope = 0._r8           ! units = per mmol m^-2
+  real(r8), parameter :: broadleafJmaxInt    = 1._r8           ! units = unitless
+  ! fit with uncertainty in x-y
   real(r8), parameter :: broadleafJmaxSlope  = -0.0037_r8      ! units = per mmol m^-2
-  real(r8), parameter :: nonwoodyJmaxInt     = 1._r8  ! units = unitless
-  real(r8), parameter :: nonwoodyJmaxSlope   = 0._r8 ! units = per mmol m^-2
+  ! fit without uncertainties : ozone LUNA robust -> no change
+  !real(r8), parameter :: broadleafJmaxSlope  = -0.0057_r8      ! units = per mmol m^-2
+  real(r8), parameter :: nonwoodyJmaxInt     = 1._r8           ! units = unitless
+  real(r8), parameter :: nonwoodyJmaxSlope   = 0._r8           ! units = per mmol m^-2
   
-  ! o3 intercepts and slopes for VcmaxO3/Vcmax0
-  real(r8), parameter :: needleleafVcmaxInt   = 1._r8  ! units = unitless 
-  real(r8), parameter :: needleleafVcmaxSlope = 0._r8      ! units = per mmol m^-2
-  real(r8), parameter :: broadleafVcmaxInt    = 1._r8  ! units = unitless  
-  real(r8), parameter :: broadleafVcmaxSlope  = -0.0093_r8      ! units = per mmol m^-2
-  real(r8), parameter :: nonwoodyVcmaxInt     = 1._r8  ! units = unitless
-  real(r8), parameter :: nonwoodyVcmaxSlope   = 0._r8 ! units = per mmol m^-2
+  ! o3 intercepts and slopes for VcmaxO3/Vcmax0 
+  ! -> not needded in LUNA! use for testing; may be removed later
+  real(r8), parameter :: needleleafVcmaxInt   = 1._r8          ! units = unitless 
+  real(r8), parameter :: needleleafVcmaxSlope = 0._r8          ! units = per mmol m^-2
+  real(r8), parameter :: broadleafVcmaxInt    = 1._r8          ! units = unitless  
+  ! fit with uncertainty in x-y
+  real(r8), parameter :: broadleafVcmaxSlope  = -0.0093_r8     ! units = per mmol m^-2
+  ! fit without uncertainties : ozone LUNA robust -> no change
+  !real(r8), parameter :: broadleafVcmaxSlope  = -0.006_r8     ! units = per mmol m^-2
+  real(r8), parameter :: nonwoodyVcmaxInt     = 1._r8          ! units = unitless
+  real(r8), parameter :: nonwoodyVcmaxSlope   = 0._r8          ! units = per mmol m^-2
 
   character(len=*), parameter, private :: sourcefile = &
        __FILE__
@@ -203,6 +210,8 @@ contains
     !     avgflag='A', long_name='total ozone flux into shaded leaves', &
     !     ptr_patch=this%o3uptakesha_patch)
 
+    ! VcmaxO3/Vcmax0 
+    ! -> not needded in LUNA! use for testing; may be removed later
     this%o3coefvcmaxsun_patch(begp:endp) = spval
     call hist_addfld1d (fname='O3COEFVCMAXSUN', units='1', &
          avgflag='A', long_name='LUNA ozone coefficient for Vcmax for sunlit leaves', &
@@ -212,7 +221,8 @@ contains
     call hist_addfld1d (fname='O3COEFVCMAXSHA', units='1', &
          avgflag='A', long_name='LUNA ozone coefficient for Vcmax for shaded leaves', &
          ptr_patch=this%o3coefvcmaxsha_patch)
-
+    
+    ! JmaxO3/Jmax0
     this%o3coefjmaxsun_patch(begp:endp) = spval
     call hist_addfld1d (fname='O3COEFJMAXSUN', units='1', &
          avgflag='A', long_name='LUNA ozone coefficient for Jmax for sunlit leaves', &
@@ -432,6 +442,8 @@ contains
        ! Determine parameter values for this pft
        ! TODO(wjs, 2014-10-01) Once these parameters are moved into the params file, this
        ! logic can be removed.
+       ! VcmaxO3/Vcmax0 
+       ! -> not needded in LUNA! use for testing; may be removed later
        if (pft_type>3) then
           if (pftcon%woody(pft_type)==0) then
              vcmaxInt   = nonwoodyVcmaxInt
