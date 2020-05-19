@@ -178,7 +178,7 @@ contains
          spinup_state, override_bgc_restart_mismatch_dump
 
     namelist /clm_inparm / &
-         co2_type
+         co2_type, o3_type
 
     namelist /clm_inparm / &
          perchroot, perchroot_alt
@@ -258,7 +258,7 @@ contains
          use_lch4, use_nitrif_denitrif, use_vertsoilc, use_extralakelayers, &
          use_vichydro, use_century_decomp, use_cn, use_cndv, use_crop, use_fertilizer, &
          use_grainproduct, use_snicar_frc, use_vancouver, use_mexicocity, use_noio, &
-         use_nguardrail, use_ozone, use_ozone_luna
+         use_nguardrail, use_ozone, use_ozone_luna, o3_ppbv
 
 
     ! ----------------------------------------------------------------------
@@ -527,6 +527,13 @@ contains
             errMsg(sourcefile, __LINE__))
     end if
 
+    if (o3_type /= 'constant') then
+       write(iulog,*)'o3_type = ',o3_type,' is not supported'
+       call endrun(msg=' ERROR:: choices are constant, prognostic or diagnostic'//&
+            errMsg(sourcefile, __LINE__))
+    end if
+
+
     if ( use_dynroot .and. use_hydrstress ) then
        call endrun(msg=' ERROR:: dynroot and hydrstress can NOT be on at the same time'//&
             errMsg(sourcefile, __LINE__))
@@ -542,9 +549,15 @@ contains
             errMsg(sourcefile, __LINE__))
     end if
 
-    ! Consistency settings for co2_ppvm
+    ! Consistency settings for co2_ppmv
     if ( (co2_ppmv <= 0.0_r8) .or. (co2_ppmv > 3000.0_r8) ) then
        call endrun(msg=' ERROR: co2_ppmv is out of a reasonable range'//& 
+            errMsg(sourcefile, __LINE__))
+    end if
+
+    ! Consistency settings for o3_ppbv
+    if ( (o3_ppbv <= 0.0_r8) .or. (o3_ppbv > 200.0_r8) ) then
+       call endrun(msg=' ERROR: o3_ppbv is out of a reasonable range'//& 
             errMsg(sourcefile, __LINE__))
     end if
 
@@ -644,6 +657,7 @@ contains
 
     ! BGC
     call mpi_bcast (co2_type, len(co2_type), MPI_CHARACTER, 0, mpicom, ier)
+    call mpi_bcast (o3_type, len(o3_type), MPI_CHARACTER, 0, mpicom, ier)
     if (use_cn) then
        call mpi_bcast (suplnitro, len(suplnitro), MPI_CHARACTER, 0, mpicom, ier)
        call mpi_bcast (nfix_timeconst, 1, MPI_REAL8, 0, mpicom, ier)
@@ -737,6 +751,7 @@ contains
     call mpi_bcast (scmlat, 1, MPI_REAL8,0, mpicom, ier)
     call mpi_bcast (scmlon, 1, MPI_REAL8,0, mpicom, ier)
     call mpi_bcast (co2_ppmv, 1, MPI_REAL8,0, mpicom, ier)
+    call mpi_bcast (o3_ppbv, 1, MPI_REAL8,0, mpicom, ier)
     call mpi_bcast (albice, 2, MPI_REAL8,0, mpicom, ier)
     call mpi_bcast (soil_layerstruct,len(soil_layerstruct), MPI_CHARACTER, 0, mpicom, ier)
 
@@ -944,6 +959,13 @@ contains
     else
        write(iulog,*) '   CO2 volume mixing ratio                = ', co2_type
     end if
+
+    if ( trim(o3_type) == 'constant' )then
+       write(iulog,*) '   O3 volume mixing ratio   (nmol/mol)   = ', o3_ppbv
+    else
+       write(iulog,*) '   O3 volume mixing ratio                = ', o3_type
+    end if
+
 
     write(iulog,*) '   land-ice albedos      (unitless 0-1)   = ', albice
     write(iulog,*) '   soil layer structure = ', soil_layerstruct

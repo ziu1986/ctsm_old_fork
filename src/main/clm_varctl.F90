@@ -143,6 +143,10 @@ module clm_varctl
   ! values of 'prognostic','diagnostic','constant'
   character(len=16), public :: co2_type = 'constant'    
 
+  ! values of 'constant' -> possible future extensions: 'climatology', 'atm'
+  character(len=16), public :: o3_type = 'constant'    
+
+
   ! State of the model for the accelerated decomposition (AD) spinup. 
   ! 0 (default) = normal model; 1 = AD SPINUP
   integer, public :: spinup_state = 0 
@@ -181,6 +185,10 @@ module clm_varctl
 
   ! atmospheric CO2 molar ratio (by volume) (umol/mol)
   real(r8), public :: co2_ppmv     = 355._r8            !
+
+  ! atmospheric O3 molar ratio (by volume) (nmol/mol)
+  real(r8), public :: o3_ppbv      = 100._r8            !
+
 
   !----------------------------------------------------------
   ! C isotopes
