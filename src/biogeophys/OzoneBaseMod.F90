@@ -25,8 +25,6 @@ module OzoneBaseMod
      real(r8), pointer, public :: o3coefvsun_patch(:)  ! ozone coefficient for photosynthesis, sunlit leaves (0 - 1)
      real(r8), pointer, public :: o3coefgsha_patch(:)  ! ozone coefficient for conductance, shaded leaves (0 - 1)
      real(r8), pointer, public :: o3coefgsun_patch(:)  ! ozone coefficient for conductance, sunlit leaves (0 - 1)
-     real(r8), pointer, public :: o3coefvcmaxsha_patch(:)  ! ozone coefficient for max. carboxylation rate, shaded leaves (0 - 1)
-     real(r8), pointer, public :: o3coefvcmaxsun_patch(:)  ! ozone coefficient for max. carboxylation rate, sunlit leaves (0 - 1)
      real(r8), pointer, public :: o3coefjmaxsha_patch(:)  ! ozone coefficient for max. electron transport rate, shaded leaves (0 - 1)
      real(r8), pointer, public :: o3coefjmaxsun_patch(:)  ! ozone coefficient for max. electron transport rate, sunlit leaves (0 - 1)
   
@@ -126,8 +124,6 @@ contains
     allocate(this%o3coefvsun_patch(begp:endp))  ; this%o3coefvsun_patch(:) = nan
     allocate(this%o3coefgsha_patch(begp:endp))  ; this%o3coefgsha_patch(:) = nan
     allocate(this%o3coefgsun_patch(begp:endp))  ; this%o3coefgsun_patch(:) = nan
-    allocate(this%o3coefvcmaxsha_patch(begp:endp))  ; this%o3coefvcmaxsha_patch(:) = nan
-    allocate(this%o3coefvcmaxsun_patch(begp:endp))  ; this%o3coefvcmaxsun_patch(:) = nan
     allocate(this%o3coefjmaxsha_patch(begp:endp))  ; this%o3coefjmaxsha_patch(:) = nan
     allocate(this%o3coefjmaxsun_patch(begp:endp))  ; this%o3coefjmaxsun_patch(:) = nan
     
@@ -162,8 +158,6 @@ contains
     this%o3coefvsun_patch(begp:endp) = 1._r8
     this%o3coefgsha_patch(begp:endp) = 1._r8
     this%o3coefgsun_patch(begp:endp) = 1._r8
-    this%o3coefvcmaxsha_patch(begp:endp) = 1._r8
-    this%o3coefvcmaxsun_patch(begp:endp) = 1._r8
     this%o3coefjmaxsha_patch(begp:endp) = 1._r8
     this%o3coefjmaxsun_patch(begp:endp) = 1._r8
 

@@ -28,8 +28,6 @@ module OzoneLunaMod
      ! From ozone_type
      !real(r8), pointer :: o3uptakesha_patch(:) ! ozone dose, shaded leaves (mmol O3/m^2)
      !real(r8), pointer :: o3uptakesun_patch(:) ! ozone dose, sunlit leaves (mmol O3/m^2)
-     !real(r8), pointer, public :: o3coefvcmaxsha_patch(:)  ! ozone coefficient for max. carboxylation rate, shaded leaves (0 - 1)
-     !real(r8), pointer, public :: o3coefvcmaxsun_patch(:)  ! ozone coefficient for max. carboxylation rate, sunlit leaves (0 - 1)
      !real(r8), pointer, public :: o3coefjmaxsha_patch(:)  ! ozone coefficient for max. electron transport rate, shaded leaves (0 - 1)
      !real(r8), pointer, public :: o3coefjmaxsun_patch(:)  ! ozone coefficient for max. electron transport rate, sunlit leaves (0 - 1)
   
@@ -67,9 +65,6 @@ module OzoneLunaMod
   ! This should actually be defined directly via the diffusivities in air DH2O : DO3
   real(r8), parameter :: ko3 = 1.67_r8
 
-  ! A maximum damage may have to be set for the damage factor.
-  real(r8), parameter :: o3_damage_limit = 0.4_r8
-
   ! Data is only available for broadleaf species as of now 2020-03
   ! o3 intercepts and slopes for JmaxO3/Jmax0
   real(r8), parameter :: needleleafJmaxInt   = 1._r8           ! units = unitless 
@@ -82,18 +77,6 @@ module OzoneLunaMod
   real(r8), parameter :: nonwoodyJmaxInt     = 1._r8           ! units = unitless
   real(r8), parameter :: nonwoodyJmaxSlope   = 0._r8           ! units = per mmol m^-2
   
-  ! o3 intercepts and slopes for VcmaxO3/Vcmax0 
-  ! -> not needded in LUNA! use for testing; may be removed later
-  real(r8), parameter :: needleleafVcmaxInt   = 1._r8          ! units = unitless 
-  real(r8), parameter :: needleleafVcmaxSlope = 0._r8          ! units = per mmol m^-2
-  real(r8), parameter :: broadleafVcmaxInt    = 1._r8          ! units = unitless  
-  ! fit with uncertainty in x-y
-  real(r8), parameter :: broadleafVcmaxSlope  = -0.0093_r8     ! units = per mmol m^-2
-  ! fit without uncertainties : ozone LUNA robust -> no change
-  !real(r8), parameter :: broadleafVcmaxSlope  = -0.006_r8     ! units = per mmol m^-2
-  real(r8), parameter :: nonwoodyVcmaxInt     = 1._r8          ! units = unitless
-  real(r8), parameter :: nonwoodyVcmaxSlope   = 0._r8          ! units = per mmol m^-2
-
   character(len=*), parameter, private :: sourcefile = &
        __FILE__
 
@@ -168,8 +151,6 @@ contains
     !allocate(this%o3uptakesha_patch(begp:endp)) ; this%o3uptakesha_patch(:) = nan
     !allocate(this%o3uptakesun_patch(begp:endp)) ; this%o3uptakesun_patch(:) = nan
     !allocate(this%tlai_old_patch(begp:endp))    ; this%tlai_old_patch(:) = nan
-    allocate(this%o3coefvcmaxsha_patch(begp:endp))  ; this%o3coefvcmaxsha_patch(:) = nan
-    allocate(this%o3coefvcmaxsun_patch(begp:endp))  ; this%o3coefvcmaxsun_patch(:) = nan
     allocate(this%o3coefjmaxsha_patch(begp:endp))  ; this%o3coefjmaxsha_patch(:) = nan
     allocate(this%o3coefjmaxsun_patch(begp:endp))  ; this%o3coefjmaxsun_patch(:) = nan
     
@@ -210,18 +191,6 @@ contains
     !     avgflag='A', long_name='total ozone flux into shaded leaves', &
     !     ptr_patch=this%o3uptakesha_patch)
 
-    ! VcmaxO3/Vcmax0 
-    ! -> not needded in LUNA! use for testing; may be removed later
-    this%o3coefvcmaxsun_patch(begp:endp) = spval
-    call hist_addfld1d (fname='O3COEFVCMAXSUN', units='1', &
-         avgflag='A', long_name='LUNA ozone coefficient for Vcmax for sunlit leaves', &
-         ptr_patch=this%o3coefvcmaxsun_patch)
-
-    this%o3coefvcmaxsha_patch(begp:endp) = spval
-    call hist_addfld1d (fname='O3COEFVCMAXSHA', units='1', &
-         avgflag='A', long_name='LUNA ozone coefficient for Vcmax for shaded leaves', &
-         ptr_patch=this%o3coefvcmaxsha_patch)
-    
     ! JmaxO3/Jmax0
     this%o3coefjmaxsun_patch(begp:endp) = spval
     call hist_addfld1d (fname='O3COEFJMAXSUN', units='1', &
@@ -255,16 +224,14 @@ contains
     endp = bounds%endp
 
     call this%InitCold(bounds)
-    ! From zone_type
+    ! From ozone_type
     !this%o3uptakesha_patch(begp:endp) = 0._r8
     !this%o3uptakesun_patch(begp:endp) = 0._r8
-    this%o3coefvcmaxsha_patch(begp:endp) = 0._r8
-    this%o3coefvcmaxsun_patch(begp:endp) = 0._r8
+    !this%tlai_old_patch(begp:endp) = 0._r8
+
     this%o3coefjmaxsha_patch(begp:endp) = 0._r8
     this%o3coefjmaxsun_patch(begp:endp) = 0._r8
     
-    !this%tlai_old_patch(begp:endp) = 0._r8
-
   end subroutine InitColdLuna
 
 !-----------------------------------------------------------------------
@@ -296,28 +263,18 @@ contains
     
     call restartvar(ncid=ncid, flag=flag, varname='o3uptakesha', xtype=ncd_double, &
          dim1name='pft', &
-         long_name='ozone uptake for shaded leaves', units='mmol m^-3', &
+         long_name='accumulated ozone uptake for shaded leaves', units='mmol m^-3', &
          readvar=readvar, interpinic_flag='interp', data=this%o3uptakesha_patch)
 
     call restartvar(ncid=ncid, flag=flag, varname='o3uptakesun', xtype=ncd_double, &
          dim1name='pft', &
-         long_name='ozone uptake for sunlit leaves', units='mmol m^-3', &
+         long_name='accumulated ozone uptake for sunlit leaves', units='mmol m^-3', &
          readvar=readvar, interpinic_flag='interp', data=this%o3uptakesun_patch)
-
-    call restartvar(ncid=ncid, flag=flag, varname='o3coefvcmaxsun', xtype=ncd_double, &
-         dim1name='pft', &
-         long_name='ozone coefficient for max. carboxylation rate for sunlit leaves', units='unitless', &
-         readvar=readvar, interpinic_flag='interp', data=this%o3coefvcmaxsun_patch)
 
     call restartvar(ncid=ncid, flag=flag, varname='o3coefjmaxsun', xtype=ncd_double, &
          dim1name='pft', &
          long_name='ozone coefficient for max. electron transport rate for sunlit leaves', units='unitless', &
          readvar=readvar, interpinic_flag='interp', data=this%o3coefjmaxsun_patch)
-
-    call restartvar(ncid=ncid, flag=flag, varname='o3coefvcmaxsha', xtype=ncd_double, &
-         dim1name='pft', &
-         long_name='ozone coefficient for max. carboxylation rate for shaded leaves', units='unitless', &
-         readvar=readvar, interpinic_flag='interp', data=this%o3coefvcmaxsha_patch)
 
     call restartvar(ncid=ncid, flag=flag, varname='o3coefjmaxsha', xtype=ncd_double, &
          dim1name='pft', &
@@ -416,8 +373,7 @@ contains
   end subroutine CalcOzoneStress
 
 !-----------------------------------------------------------------------  
-  subroutine Acc24_OzoneStressOnePoint_Luna(pft_type, o3uptake, &
-        o3coefvcmax, o3coefjmax)
+  subroutine Acc24_OzoneStressOnePoint_Luna(pft_type, o3uptake, o3coefjmax)
 
     ! !USES:
     use pftconMod            , only : pftcon
@@ -425,45 +381,32 @@ contains
     ! ! ARGUMENTS:
     integer  , intent(in)    :: pft_type    ! vegetation type, for indexing into pftvarcon arrays
     real(r8) , intent(in)    :: o3uptake    ! ozone entering the leaf
-    real(r8) , intent(inout) :: o3coefvcmax ! ozone coefficient for max. carboxylation rate
     real(r8) , intent(inout) :: o3coefjmax  ! ozone coefficient for max. electron transport rate
     !
     ! !LOCAL VARIABLES:
-    real(r8) :: vcmaxInt       ! intercept for max. carboxylation rate
-    real(r8) :: vcmaxSlope     ! slope for max. carboxylation rate
     real(r8) :: jmaxInt        ! intercept for max. electron transport rate
     real(r8) :: jmaxSlope      ! slope for max. electron transport rate
 
     if ( o3uptake == 0._r8 ) then
        ! No o3 damage if no o3 uptake
-       o3coefvcmax = 1._r8
        o3coefjmax = 1._r8
     else
        ! Determine parameter values for this pft
        ! TODO(wjs, 2014-10-01) Once these parameters are moved into the params file, this
        ! logic can be removed.
-       ! VcmaxO3/Vcmax0 
-       ! -> not needded in LUNA! use for testing; may be removed later
        if (pft_type>3) then
           if (pftcon%woody(pft_type)==0) then
-             vcmaxInt   = nonwoodyVcmaxInt
-             vcmaxSlope = nonwoodyVcmaxSlope
              jmaxInt    = nonwoodyJmaxInt
              jmaxSlope  = nonwoodyJmaxSlope
           else
-             vcmaxInt   = broadleafVcmaxInt
-             vcmaxSlope = broadleafVcmaxSlope
              jmaxInt    = broadleafJmaxInt
              jmaxSlope  = broadleafJmaxSlope
           end if
        else
-          vcmaxInt   = needleleafVcmaxInt
-          vcmaxSlope = needleleafVcmaxSlope
           jmaxInt    = needleleafJmaxInt
           jmaxSlope  = needleleafJmaxSlope
        end if
        ! Apply parameter values to compute o3 coefficients
-       o3coefvcmax = max(0._r8, min(1._r8, vcmaxInt + vcmaxSlope * o3uptake))
        o3coefjmax = max(0._r8, min(1._r8, jmaxInt  + jmaxSlope  * o3uptake))
        
     end if
@@ -498,8 +441,6 @@ contains
     associate( &
          o3uptakesha => this%o3uptakesha_patch                , & ! Output: [real(r8) (:)] ozone dose
          o3uptakesun => this%o3uptakesun_patch                , & ! Output: [real(r8) (:)] ozone dose
-         o3coefvcmaxsha => this%o3coefvcmaxsha_patch          , & ! Output: [real(r8) (:)] ozone coef vcmax sha
-         o3coefvcmaxsun => this%o3coefvcmaxsun_patch          , & ! Output: [real(r8) (:)] ozone coef vcmax sun
          o3coefjmaxsha => this%o3coefjmaxsha_patch            , & ! Output: [real(r8) (:)] ozone coef jmax sha
          o3coefjmaxsun => this%o3coefjmaxsun_patch              & ! Output: [real(r8) (:)] ozone coef jmax sun
          )
@@ -514,12 +455,12 @@ contains
          ! Ozone damage for shaded leaves
          call this%Acc24_OzoneStressOnePoint_Luna( &
               pft_type=patch%itype(p), o3uptake=o3uptakesun(p), &
-              o3coefvcmax=o3coefvcmaxsha(p), o3coefjmax=o3coefjmaxsha(p))
+              o3coefjmax=o3coefjmaxsha(p))
 
          ! Ozone damage for sunlit leaves
          call this%Acc24_OzoneStressOnePoint_Luna( &
               pft_type=patch%itype(p), o3uptake=o3uptakesun(p), &
-              o3coefvcmax=o3coefvcmaxsun(p), o3coefjmax=o3coefjmaxsun(p))
+              o3coefjmax=o3coefjmaxsun(p))
 
 
       end do

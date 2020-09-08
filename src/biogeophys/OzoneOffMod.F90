@@ -126,8 +126,6 @@ contains
     ! Explicitly set outputs to 1. This isn't really needed, because they should still be
     ! at 1 from cold-start initialization, but do this for clarity here.
 
-    this%o3coefvcmaxsha_patch(bounds%begp:bounds%endp) = 1._r8
-    this%o3coefvcmaxsun_patch(bounds%begp:bounds%endp) = 1._r8
     this%o3coefjmaxsha_patch(bounds%begp:bounds%endp) = 1._r8
     this%o3coefjmaxsun_patch(bounds%begp:bounds%endp) = 1._r8
 

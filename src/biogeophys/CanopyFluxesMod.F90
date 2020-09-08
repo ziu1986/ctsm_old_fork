@@ -1318,7 +1318,7 @@ contains
             if(is_end_day)then
                
                if(use_ozone_luna) then
-                  ! Get damage on Vcmax and Jmax
+                  ! Get damage on Jmax
                   ! accumulated over one day
                   call ozone_inst%Acc24_OzoneStress_Luna(bounds, fn, filterp)
                end if
