@@ -26,7 +26,7 @@ module LunaMod
   use SolarAbsorbedType     , only : solarabs_type
   use SurfaceAlbedoType     , only : surfalb_type
   use WaterstateType        , only : waterstate_type
-  use OzoneBaseMod        , only : ozone_base_type
+  use OzoneBaseMod          , only : ozone_base_type
   !use EDPhotosynthesisMod  , only : vcmaxc, jmaxc
   
   
