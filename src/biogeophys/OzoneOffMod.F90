@@ -24,6 +24,7 @@ module OzoneOffMod
      procedure, public :: Init
      procedure, public :: Restart
      procedure, public :: CalcOzoneStress
+     procedure, public :: Acc24_OzoneStress_Luna
   end type ozone_off_type
 
   interface ozone_off_type
@@ -114,5 +115,20 @@ contains
     this%o3coefgsun_patch(bounds%begp:bounds%endp) = 1._r8
 
   end subroutine CalcOzoneStress
+
+  subroutine Acc24_OzoneStress_Luna(this, bounds, num_exposedvegp, filter_exposedvegp)
+
+    class(ozone_off_type) , intent(inout) :: this
+    type(bounds_type)      , intent(in)    :: bounds
+    integer  , intent(in) :: num_exposedvegp           ! number of points in filter_exposedvegp
+    integer  , intent(in) :: filter_exposedvegp(:)     ! patch filter for non-snow-covered veg
+    
+    ! Explicitly set outputs to 1. This isn't really needed, because they should still be
+    ! at 1 from cold-start initialization, but do this for clarity here.
+
+    this%o3coefjmaxsha_patch(bounds%begp:bounds%endp) = 1._r8
+    this%o3coefjmaxsun_patch(bounds%begp:bounds%endp) = 1._r8
+
+  end subroutine Acc24_OzoneStress_Luna
 
 end module OzoneOffMod
