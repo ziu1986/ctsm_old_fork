@@ -274,8 +274,8 @@ module LunaMod
     jmx25_z       => photosyns_inst%jmx25_z_patch                     , & ! Output: [real(r8) (:,:) ] patch leaf Jmax25 (umol electron/m**2/s) for canopy layer
     pnlc_z        => photosyns_inst%pnlc_z_patch                      , & ! Output: [real(r8) (:,:) ] patch proportion of leaf nitrogen allocated for light capture for canopy layer 
     enzs_z        => photosyns_inst%enzs_z_patch                      , & ! Output: [real(r8) (:,:) ] enzyme decay status 1.0-fully active; 0-all decayed during stress
-    o3coefjmaxsha => ozone_inst%o3coefjmaxsha_patch                   , & ! Output: [real(r8) (:)] ozone coef jmax sha
-    o3coefjmaxsun => ozone_inst%o3coefjmaxsun_patch                     & ! Output: [real(r8) (:)] ozone coef jmax sun
+    o3coefjmaxsha => ozone_inst%o3coefjmaxsha_patch                   , & ! Input: [real(r8) (:)] ozone coef jmax sha
+    o3coefjmaxsun => ozone_inst%o3coefjmaxsun_patch                     & ! Input: [real(r8) (:)] ozone coef jmax sun
     )  
     !----------------------------------------------------------------------------------------------------------------------------------------------------------
     !set timestep
