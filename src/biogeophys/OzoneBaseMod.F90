@@ -65,7 +65,7 @@ module OzoneBaseMod
      end subroutine Restart_interface
        
      subroutine CalcOzoneStress_interface(this, bounds, num_exposedvegp, filter_exposedvegp, &
-          forc_pbot, forc_th, rssun, rssha, rb, ram, tlai)
+          forc_po3, forc_pbot, forc_th, rssun, rssha, rb, ram, tlai)
        use decompMod    , only : bounds_type
        use shr_kind_mod , only : r8 => shr_kind_r8
        import :: ozone_base_type
@@ -74,6 +74,7 @@ module OzoneBaseMod
        type(bounds_type)      , intent(in)    :: bounds
        integer  , intent(in) :: num_exposedvegp           ! number of points in filter_exposedvegp
        integer  , intent(in) :: filter_exposedvegp(:)     ! patch filter for non-snow-covered veg
+       real(r8) , intent(in) :: forc_po3( bounds%begc: )  ! ozone concentration in partial pressure (Pa)
        real(r8) , intent(in) :: forc_pbot( bounds%begc: ) ! atmospheric pressure (Pa)
        real(r8) , intent(in) :: forc_th( bounds%begc: )   ! atmospheric potential temperature (K)
        real(r8) , intent(in) :: rssun( bounds%begp: )     ! leaf stomatal resistance, sunlit leaves (s/m)

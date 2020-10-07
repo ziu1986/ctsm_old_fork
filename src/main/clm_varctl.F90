@@ -143,7 +143,7 @@ module clm_varctl
   ! values of 'prognostic','diagnostic','constant'
   character(len=16), public :: co2_type = 'constant'    
 
-  ! values of 'constant' -> possible future extensions: 'climatology', 'atm'
+  ! values of 'constant' 'diagnostic' -> possible future extensions: 'climatology'
   character(len=16), public :: o3_type = 'constant'    
 
 

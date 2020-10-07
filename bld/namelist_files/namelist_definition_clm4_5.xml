@@ -84,9 +84,10 @@ Atmospheric O3 molar ratio (by volume) only used when o3_type==constant (nmol/mo
 </entry>
 
 <entry id="o3_type" type="char*16" category="clm_physics"
-       group="clm_inparm" valid_values="constant" >
+       group="clm_inparm" valid_values="constant,diagnostic" >
 Type of O3 feedback.
-    constant   = use the input o3_ppmv value
+    constant   = use the input o3_ppbv value
+    disgnostic = use diagnostic values from the atmosphere
 </entry>
 
 

@@ -55,7 +55,7 @@ module OzoneLunaMod
   
   ! TODO(wjs, 2014-09-29) This parameter will eventually become a spatially-varying
   ! value, obtained from ATM
-  real(r8), parameter :: forc_ozone = 100._r8 * 1.e-9_r8  ! ozone partial pressure [mol/mol]
+  !real(r8), parameter :: forc_ozone = 100._r8 * 1.e-9_r8  ! ozone partial pressure [mol/mol]
 
   ! TODO(wjs, 2014-09-29) The following parameters should eventually be moved to the
   ! params file. Parameters differentiated on veg type should be put on the params file
@@ -289,7 +289,7 @@ contains
 
   !-----------------------------------------------------------------------
   subroutine CalcOzoneStress(this, bounds, num_exposedvegp, filter_exposedvegp, &
-       forc_pbot, forc_th, rssun, rssha, rb, ram, tlai)
+       forc_po3, forc_pbot, forc_th, rssun, rssha, rb, ram, tlai)
     !
     ! !DESCRIPTION:
     ! Calculate ozone uptake for each timestep.
@@ -303,6 +303,7 @@ contains
     type(bounds_type)      , intent(in)    :: bounds
     integer  , intent(in) :: num_exposedvegp           ! number of points in filter_exposedvegp
     integer  , intent(in) :: filter_exposedvegp(:)     ! patch filter for non-snow-covered veg
+    real(r8) , intent(in) :: forc_po3( bounds%begc: )  ! ozone concentration in partial pressure (Pa)
     real(r8) , intent(in) :: forc_pbot( bounds%begc: ) ! atmospheric pressure (Pa)
     real(r8) , intent(in) :: forc_th( bounds%begc: )   ! atmospheric potential temperature (K)
     real(r8) , intent(in) :: rssun( bounds%begp: )     ! leaf stomatal resistance, sunlit leaves (s/m)
@@ -315,11 +316,14 @@ contains
     integer  :: p              ! patch index
     integer  :: c              ! column index
 
+    real(r8) :: forc_ozone     ! ozone partial pressure (mol/mol)
+
     character(len=*), parameter :: subname = 'CalcOzoneStress'
     !-----------------------------------------------------------------------
     
     ! Enforce expected array sizes (mainly so that a debug-mode threaded test with
     ! ozone-off can pick up problems with the call to this routine)
+    SHR_ASSERT_ALL((ubound(forc_po3) == (/bounds%endc/)), errMsg(sourcefile, __LINE__))
     SHR_ASSERT_ALL((ubound(forc_pbot) == (/bounds%endc/)), errMsg(sourcefile, __LINE__))
     SHR_ASSERT_ALL((ubound(forc_th) == (/bounds%endc/)), errMsg(sourcefile, __LINE__))
     SHR_ASSERT_ALL((ubound(rssun) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))
@@ -341,7 +345,8 @@ contains
 
        ! Need to make a dummy call to CalcOzoneUptake to update accumulated
        ! ozone over a days period.
-
+       ! Convert from Pa to mol/mol
+       forc_ozone = forc_po3(c) / forc_pbot(c)
        ! Ozone uptake for shaded leaves
        call this%CalcOzoneUptakeOnePoint( &
             forc_ozone=forc_ozone, forc_pbot=forc_pbot(c), forc_th=forc_th(c), &

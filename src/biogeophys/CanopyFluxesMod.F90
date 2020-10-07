@@ -1298,6 +1298,7 @@ contains
          dummy_to_make_pgi_happy = ubound(atm2lnd_inst%forc_pbot_downscaled_col, 1)
          call ozone_inst%CalcOzoneStress( &
               bounds, fn, filterp, &
+              forc_po3  = atm2lnd_inst%forc_po3_grc(bounds%begc:bounds%endc),& 
               forc_pbot = atm2lnd_inst%forc_pbot_downscaled_col(bounds%begc:bounds%endc), &
               forc_th   = atm2lnd_inst%forc_th_downscaled_col(bounds%begc:bounds%endc), &
               rssun     = photosyns_inst%rssun_patch(bounds%begp:bounds%endp), &

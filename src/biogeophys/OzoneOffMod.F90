@@ -82,12 +82,13 @@ contains
   end subroutine Restart
 
   subroutine CalcOzoneStress(this, bounds, num_exposedvegp, filter_exposedvegp, &
-          forc_pbot, forc_th, rssun, rssha, rb, ram, tlai)
+          forc_po3, forc_pbot, forc_th, rssun, rssha, rb, ram, tlai)
 
     class(ozone_off_type) , intent(inout) :: this
     type(bounds_type)      , intent(in)    :: bounds
     integer  , intent(in) :: num_exposedvegp           ! number of points in filter_exposedvegp
     integer  , intent(in) :: filter_exposedvegp(:)     ! patch filter for non-snow-covered veg
+    real(r8) , intent(in) :: forc_po3( bounds%begc: )  ! ozone concentration in partial pressure (Pa)
     real(r8) , intent(in) :: forc_pbot( bounds%begc: ) ! atmospheric pressure (Pa)
     real(r8) , intent(in) :: forc_th( bounds%begc: )   ! atmospheric potential temperature (K)
     real(r8) , intent(in) :: rssun( bounds%begp: )     ! leaf stomatal resistance, sunlit leaves (s/m)
@@ -98,6 +99,7 @@ contains
 
     ! Enforce expected array sizes (mainly so that a debug-mode threaded test with
     ! ozone-off can pick up problems with the call to this routine)
+    SHR_ASSERT_ALL((ubound(forc_po3) == (/bounds%endc/)), errMsg(sourcefile, __LINE__))
     SHR_ASSERT_ALL((ubound(forc_pbot) == (/bounds%endc/)), errMsg(sourcefile, __LINE__))
     SHR_ASSERT_ALL((ubound(forc_th) == (/bounds%endc/)), errMsg(sourcefile, __LINE__))
     SHR_ASSERT_ALL((ubound(rssun) == (/bounds%endp/)), errMsg(sourcefile, __LINE__))

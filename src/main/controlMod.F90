@@ -529,9 +529,9 @@ contains
             errMsg(sourcefile, __LINE__))
     end if
 
-    if (o3_type /= 'constant') then
+    if (o3_type /= 'constant' .and. co2_type /= 'diagnostic') then
        write(iulog,*)'o3_type = ',o3_type,' is not supported'
-       call endrun(msg=' ERROR:: choices are constant, prognostic or diagnostic'//&
+       call endrun(msg=' ERROR:: choices are constant, or diagnostic'//&
             errMsg(sourcefile, __LINE__))
     end if
 
