@@ -529,7 +529,7 @@ contains
             errMsg(sourcefile, __LINE__))
     end if
 
-    if (o3_type /= 'constant' .and. co2_type /= 'diagnostic') then
+    if (o3_type /= 'constant' .and. o3_type /= 'diagnostic') then
        write(iulog,*)'o3_type = ',o3_type,' is not supported'
        call endrun(msg=' ERROR:: choices are constant, or diagnostic'//&
             errMsg(sourcefile, __LINE__))
@@ -558,7 +558,7 @@ contains
     end if
 
     ! Consistency settings for o3_ppbv
-    if ( (o3_ppbv <= 0.0_r8) .or. (o3_ppbv > 200.0_r8) ) then
+    if ( (o3_ppbv < 0.0_r8) .or. (o3_ppbv > 400.0_r8) ) then
        call endrun(msg=' ERROR: o3_ppbv is out of a reasonable range'//& 
             errMsg(sourcefile, __LINE__))
     end if
