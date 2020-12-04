@@ -40,6 +40,8 @@ def buildnml(case, caseroot, compname):
     din_loc_root = case.get_value("DIN_LOC_ROOT")
     ccsm_co2_ppmv = case.get_value("CCSM_CO2_PPMV")
     clm_co2_type = case.get_value("CLM_CO2_TYPE")
+    ccsm_o3_ppbv = case.get_value("CCSM_O3_PPBV")
+    clm_o3_type = case.get_value("CLM_O3_TYPE")
     clm_namelist_opts = case.get_value("CLM_NAMELIST_OPTS")
     clm_bldnml_opts = case.get_value("CLM_BLDNML_OPTS")
     clm_nml_use_case = case.get_value("CLM_NML_USE_CASE")
