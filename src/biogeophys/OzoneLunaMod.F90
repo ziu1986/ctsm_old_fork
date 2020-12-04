@@ -4,7 +4,10 @@ module OzoneLunaMod
   ! !DESCRIPTION:
   ! Calculates ozone-induced stress for use with LUNA model.
   !
-  ! will be updated
+  ! A correction factor (1->0) in response to cumulative ozone uptake (CUO) 
+  ! is calculated for Jmax. We assume a linear relationship between Jmax(CUO)
+  ! normalized to Jmax(0). This replaces the direkt correction on stomatal 
+  ! conductance and net photosynthesis in OzoneMod.
   !
   ! Developed by Stefanie Falk.
   !
@@ -24,12 +27,8 @@ module OzoneLunaMod
   ! !PUBLIC TYPES:
   type, extends(ozone_type), public :: ozone_luna_type
      private
-     ! Private data members
-     ! From ozone_type
-     !real(r8), pointer :: o3uptakesha_patch(:) ! ozone dose, shaded leaves (mmol O3/m^2)
-     !real(r8), pointer :: o3uptakesun_patch(:) ! ozone dose, sunlit leaves (mmol O3/m^2)
-     !real(r8), pointer, public :: o3coefjmaxsha_patch(:)  ! ozone coefficient for max. electron transport rate, shaded leaves (0 - 1)
-     !real(r8), pointer, public :: o3coefjmaxsun_patch(:)  ! ozone coefficient for max. electron transport rate, sunlit leaves (0 - 1)
+     ! Private data members are inherited from base classes
+     
   
    contains
      ! Public routines
@@ -42,7 +41,7 @@ module OzoneLunaMod
      procedure, private :: InitHistoryLuna
      procedure, private :: InitColdLuna
 
-     ! Calculate ozone stress for a single point, for just sunlit or shaded leaves
+     ! Calculate ozone stress for sunlit or shaded leaves accumulated over one day
      procedure, public :: Acc24_OzoneStress_Luna
      procedure, private, nopass :: Acc24_OzoneStressOnePoint_Luna
   end type ozone_luna_type
@@ -53,27 +52,20 @@ module OzoneLunaMod
 
   ! !PRIVATE TYPES:
   
-  ! TODO(wjs, 2014-09-29) This parameter will eventually become a spatially-varying
-  ! value, obtained from ATM
-  !real(r8), parameter :: forc_ozone = 100._r8 * 1.e-9_r8  ! ozone partial pressure [mol/mol]
-
   ! TODO(wjs, 2014-09-29) The following parameters should eventually be moved to the
   ! params file. Parameters differentiated on veg type should be put on the params file
   ! with a pft dimension.
 
   ! o3:h2o resistance ratio defined by Sitch et al. 2007
-  ! This should actually be defined directly via the diffusivities in air DH2O : DO3
+  ! This should actually be defined directly via diffusivities in air DH2O : DO3
   real(r8), parameter :: ko3 = 1.67_r8
 
-  ! Data is only available for broadleaf species as of now 2020-03
-  ! o3 intercepts and slopes for JmaxO3/Jmax0
+  ! Data is currently only available for broadleaf species (Dec 2020)
+  ! O3 intercepts and slopes for JmaxO3/Jmax0
   real(r8), parameter :: needleleafJmaxInt   = 1._r8           ! units = unitless 
   real(r8), parameter :: needleleafJmaxSlope = 0._r8           ! units = per mmol m^-2
   real(r8), parameter :: broadleafJmaxInt    = 1._r8           ! units = unitless
-  ! fit with uncertainty in x-y
   real(r8), parameter :: broadleafJmaxSlope  = -0.0037_r8      ! units = per mmol m^-2
-  ! fit without uncertainties : ozone LUNA robust -> no change
-  !real(r8), parameter :: broadleafJmaxSlope  = -0.0057_r8      ! units = per mmol m^-2
   real(r8), parameter :: nonwoodyJmaxInt     = 1._r8           ! units = unitless
   real(r8), parameter :: nonwoodyJmaxSlope   = 0._r8           ! units = per mmol m^-2
   
@@ -146,11 +138,10 @@ contains
     begp = bounds%begp
     endp = bounds%endp
 
+    ! Allocating variables from OzoneMod
     call this%InitAllocate(bounds)
-    ! From ozone_type
-    !allocate(this%o3uptakesha_patch(begp:endp)) ; this%o3uptakesha_patch(:) = nan
-    !allocate(this%o3uptakesun_patch(begp:endp)) ; this%o3uptakesun_patch(:) = nan
-    !allocate(this%tlai_old_patch(begp:endp))    ; this%tlai_old_patch(:) = nan
+
+    ! Allocating variables for OzoneLunaMod 
     allocate(this%o3coefjmaxsha_patch(begp:endp))  ; this%o3coefjmaxsha_patch(:) = nan
     allocate(this%o3coefjmaxsun_patch(begp:endp))  ; this%o3coefjmaxsun_patch(:) = nan
     
@@ -180,18 +171,9 @@ contains
     endp = bounds%endp
 
     call this%InitHistory(bounds)
-    ! From ozone_type
-    !this%o3uptakesun_patch(begp:endp) = spval
-    !call hist_addfld1d (fname='O3UPTAKESUN', units='mmol/m^2', &
-    !     avgflag='A', long_name='total ozone flux into sunlit leaves', &
-    !     ptr_patch=this%o3uptakesun_patch)
-
-    !this%o3uptakesha_patch(begp:endp) = spval
-    !call hist_addfld1d (fname='O3UPTAKESHA', units='mmol/m^2', &
-    !     avgflag='A', long_name='total ozone flux into shaded leaves', &
-    !     ptr_patch=this%o3uptakesha_patch)
-
+    
     ! JmaxO3/Jmax0
+    ! write description
     this%o3coefjmaxsun_patch(begp:endp) = spval
     call hist_addfld1d (fname='O3COEFJMAXSUN', units='1', &
          avgflag='A', long_name='LUNA ozone coefficient for Jmax for sunlit leaves', &
@@ -224,11 +206,7 @@ contains
     endp = bounds%endp
 
     call this%InitCold(bounds)
-    ! From ozone_type
-    !this%o3uptakesha_patch(begp:endp) = 0._r8
-    !this%o3uptakesun_patch(begp:endp) = 0._r8
-    !this%tlai_old_patch(begp:endp) = 0._r8
-
+    
     this%o3coefjmaxsha_patch(begp:endp) = 0._r8
     this%o3coefjmaxsun_patch(begp:endp) = 0._r8
     
@@ -343,10 +321,10 @@ contains
        p = filter_exposedvegp(fp)
        c = patch%column(p)
 
-       ! Need to make a dummy call to CalcOzoneUptake to update accumulated
-       ! ozone over a days period.
+       ! Need to call to CalcOzoneUptake to update accumulated ozone over a days period.
        ! Convert from Pa to mol/mol
        forc_ozone = forc_po3(c) / forc_pbot(c)
+
        ! Ozone uptake for shaded leaves
        call this%CalcOzoneUptakeOnePoint( &
             forc_ozone=forc_ozone, forc_pbot=forc_pbot(c), forc_th=forc_th(c), &
@@ -453,9 +431,6 @@ contains
       do fp = 1, num_exposedvegp
          p = filter_exposedvegp(fp)
          c = patch%column(p)
-
-         ! Need to make another call to either CalcOzoneUptake to get accumulated ozone?
-         ! Most likely not... ozoneuptake should have been updated in the previous timestep.
 
          ! Ozone damage for shaded leaves
          call this%Acc24_OzoneStressOnePoint_Luna( &
